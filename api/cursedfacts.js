@@ -4,25 +4,27 @@ export default async function handler(req, res) {
       "https://raw.githubusercontent.com/MehmetAkin1/cursedfacts/main/cursedfacts.json"
     );
 
-    if (!response.ok) {
-      throw new Error("GitHub fetch failed: " + response.status);
-    }
-
     const text = await response.text();
-    const data = JSON.parse(text);
 
-    if (!data.facts || !Array.isArray(data.facts)) {
-      throw new Error("Invalid JSON structure");
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error("JSON parse failed. GitHub response is not valid JSON.");
     }
 
-    const facts = data.facts;
-    const randomFact = facts[Math.floor(Math.random() * facts.length)];
+    if (!data?.facts?.length) {
+      throw new Error("Facts array missing or empty");
+    }
+
+    const randomFact =
+      data.facts[Math.floor(Math.random() * data.facts.length)];
 
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.status(200).send(randomFact);
 
   } catch (err) {
-    console.error(err);
-    res.status(200).send("Geography is broken. Try again later.");
+    console.error("API ERROR:", err.message);
+    res.status(200).send("Geography is broken (GitHub connection failed).");
   }
 }
